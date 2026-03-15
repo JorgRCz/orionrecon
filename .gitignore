@@ -1,0 +1,25 @@
+# Sessions y reportes generados
+sessions/
+*.html
+*.json
+
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+.env
+venv/
+.venv/
+
+# Config con API keys (usar config.example.yaml como plantilla)
+config.yaml
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Editor
+.vscode/
+.idea/
+*.swp
+*.swo

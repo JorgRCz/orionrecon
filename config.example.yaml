@@ -1,0 +1,92 @@
+# Pentest Framework Configuration
+# ================================
+# AVISO LEGAL: Solo usar en sistemas con autorización explícita.
+
+general:
+  sessions_dir: "./sessions"
+  wordlists_dir: "./wordlists"
+  max_threads: 10
+  timeout: 30
+  user_agent: "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36"
+
+# API Keys opcionales
+api_keys:
+  shodan: ""
+  virustotal: ""
+  securitytrails: ""
+
+recon:
+  theharvester:
+    enabled: true
+    sources: ["google", "bing", "yahoo", "crtsh", "dnsdumpster", "threatcrowd"]
+    limit: 500
+  amass:
+    enabled: true
+    timeout: 300
+    passive: true
+  subfinder:
+    enabled: true
+    timeout: 120
+  crtsh:
+    enabled: true
+
+nmap:
+  profiles:
+    quick:
+      flags: "-T4 -F --open"
+      description: "100 puertos más comunes"
+    stealth:
+      flags: "-sS -T2 -p- --open -Pn"
+      description: "SYN stealth scan completo"
+    full:
+      flags: "-sS -sV -sC -O -T4 -p- --open"
+      description: "Full con versiones y scripts"
+    vuln:
+      flags: "-sV --script=vuln -T4 --open"
+      description: "Scripts de vulnerabilidades NSE"
+    udp:
+      flags: "-sU -T4 --top-ports 200 --open"
+      description: "Puertos UDP top 200"
+    aggressive:
+      flags: "-A -T4 -p- --open"
+      description: "Agresivo: OS, versión, scripts, traceroute"
+    web:
+      flags: "-sV -p 80,443,8080,8443,8000,8888,3000,4000,5000 --open -sC"
+      description: "Solo puertos web comunes"
+
+nuclei:
+  enabled: true
+  templates_path: "~/.nuclei-templates"
+  severity: ["critical", "high", "medium"]
+  rate_limit: 150
+  bulk_size: 25
+  concurrency: 10
+  tags: []
+
+fuzzing:
+  ffuf:
+    wordlists:
+      directories: "/usr/share/wordlists/dirb/common.txt"
+      parameters: "/usr/share/wordlists/SecLists/Discovery/Web-Content/burp-parameter-names.txt"
+      vhosts: "/usr/share/wordlists/SecLists/Discovery/DNS/subdomains-top1million-5000.txt"
+    threads: 40
+    rate: 0
+    timeout: 10
+    filter_codes: "404,400,403"
+
+tech_detection:
+  check_headers: true
+  check_cookies: true
+  check_html: true
+  check_js: true
+  check_favicon: true
+
+takeover:
+  enabled: true
+  concurrency: 20
+  timeout: 10
+
+reporting:
+  theme: "hackerone"
+  include_raw: true
+  include_timeline: true
