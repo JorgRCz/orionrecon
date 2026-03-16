@@ -1,28 +1,87 @@
-# ⭐ OrionRecon — Attack Surface Recon Toolkit
+<p align="center">
+  <img src="https://img.shields.io/badge/Python-3.10+-blue?style=for-the-badge&logo=python&logoColor=white"/>
+  <img src="https://img.shields.io/badge/Platform-Kali%20Linux-557C94?style=for-the-badge&logo=linux&logoColor=white"/>
+  <img src="https://img.shields.io/badge/License-MIT-green?style=for-the-badge"/>
+  <img src="https://img.shields.io/badge/OWASP-Top%2010-red?style=for-the-badge"/>
+</p>
 
-> **By Jorge RC**
-
-Framework modular de reconocimiento y pentesting con pipeline automatizado, escaneo de vulnerabilidades y dashboard HTML interactivo estilo HackerOne.
-
-> ⚠️ **Solo para uso en sistemas con autorización explícita. El uso no autorizado puede ser ilegal.**
-
----
-
-## Módulos
-
-| Módulo | Herramientas | Descripción |
-|--------|-------------|-------------|
-| 🌐 **Recon / OSINT** | theHarvester, amass, subfinder, crt.sh | Enumeración pasiva de subdominios, emails, IPs |
-| 🔫 **Nmap Artillery** | nmap | 10 perfiles: quick, stealth, full, vuln, udp, web, smb... |
-| 💊 **Nuclei** | nuclei | Detección de vulnerabilidades con templates |
-| 🔬 **Tech Detection** | requests | Fingerprinting de tecnologías (Wappalyzer-like) |
-| 🎯 **Takeover Check** | dns, requests | Detección de subdomain takeover (20+ servicios) |
-| 💥 **Fuzzing** | ffuf | Directory, parameter y vhost fuzzing |
-| 📊 **Dashboard** | — | Reporte HTML dark theme, filtros, timeline, export JSON |
+<h1 align="center">⭐ OrionRecon</h1>
+<p align="center"><b>Attack Surface Reconnaissance & Vulnerability Assessment Toolkit</b></p>
+<p align="center">
+  Modular · Automated · OWASP Top 10 · Professional PDF Reports
+</p>
 
 ---
 
-## Instalación
+> ⚠️ **For authorized use only.** This tool must only be used on systems you own or have explicit written permission to test. Unauthorized use may be illegal. The author assumes no liability for misuse.
+
+---
+
+## What is OrionRecon?
+
+OrionRecon is a modular, automated reconnaissance and vulnerability assessment framework designed for professional penetration testers. It chains together 15+ industry-standard tools and native checks into a single pipeline — from passive OSINT to active vulnerability scanning — and delivers results through an interactive dark-theme HTML dashboard and a branded PDF report.
+
+---
+
+## Features at a Glance
+
+| Category | Coverage |
+|---|---|
+| 🌐 Passive Recon | Subdomain enum, email harvesting, historical URLs, ASN/CIDR mapping |
+| 🔫 Active Scanning | Port discovery, service version detection, OS fingerprinting |
+| 💊 Vulnerability Detection | Nuclei templates (CVEs, misconfigs, exposures) |
+| 🔬 Tech Fingerprinting | Wappalyzer-like stack detection, security header analysis |
+| 🔟 OWASP Top 10 | A01→A10 automated checks with finding classification |
+| ☁️ Cloud Recon | AWS S3, GCP GCS, Azure Blob, DigitalOcean Spaces, CNAME detection |
+| 🎯 Subdomain Takeover | 25+ services (AWS, Heroku, GitHub Pages, Netlify, Vercel...) |
+| 🔒 TLS/SSL | Weak protocols, cipher suites, Heartbleed, POODLE, cert analysis |
+| 🌐 CORS | Origin reflection, null origin, wildcard + credentials |
+| 🛡 WAF/CDN Detection | wafw00f + native signatures |
+| 💥 Fuzzing | Directory, parameter and vhost fuzzing via ffuf |
+| 🕷️ Web Crawling | Endpoint discovery, forms, interesting parameters |
+| 🔐 Secrets Scanner | API keys, tokens, passwords in JS files |
+| 📸 Screenshots | Visual capture of all discovered URLs |
+| 📊 Reports | Interactive HTML dashboard + branded PDF |
+
+---
+
+## OWASP Top 10 Coverage
+
+| ID | Category | Checks |
+|---|---|---|
+| A01 | Broken Access Control | Path traversal, CORS misconfigs, forced browsing, takeover |
+| A02 | Cryptographic Failures | TLS weak protocols, HSTS absent, cookies without Secure flag |
+| A03 | Injection | SQL injection (error-based), reflected XSS, LFI/path traversal |
+| A05 | Security Misconfiguration | 8 security headers, CSP analysis, technology disclosure |
+| A07 | Auth Failures | Default credentials (15 services), JWT alg:none, weak JWT secrets |
+| A10 | SSRF | SSRF parameter detection (30+ patterns) |
+
+---
+
+## Modules
+
+```
+modules/
+├── recon/          theHarvester · subfinder · amass · crt.sh · dnsx
+│                   alterx · gau (Wayback) · asnmap · Shodan
+├── scanning/       nmap · nuclei · httpx · naabu · sslscan/testssl
+│                   CORS scanner · CORS scanner
+├── owasp/          HeaderChecker (A05) · InjectionProber (A03/A10)
+│                   AuthChecker (A07) — default creds + JWT
+├── tech/           Native Wappalyzer-like fingerprinting
+├── waf/            wafw00f + native WAF/CDN signatures
+├── takeover/       Subdomain takeover (25+ cloud services)
+├── secrets/        JS secrets scanner (regex patterns)
+├── screenshots/    gowitness
+├── crawl/          katana (JS-aware crawler)
+├── cloud/          AWS S3 · GCP GCS · Azure Blob · DO Spaces
+├── fuzzing/        ffuf (directories · parameters · vhosts)
+└── reporting/      Interactive HTML dashboard + WeasyPrint PDF
+```
+
+---
+
+## Installation
 
 ```bash
 git clone https://github.com/JorgRCz/orionrecon.git
@@ -30,133 +89,182 @@ cd orionrecon
 bash install.sh
 ```
 
-El script instala automáticamente:
-- Dependencias Python
-- theHarvester, subfinder, nuclei, ffuf, amass (si tienes Go)
-- SecLists (wordlists)
-- Comando global `orionrecon`
+`install.sh` automatically installs:
+- Python dependencies (`pip`)
+- Go tools: subfinder, nuclei, ffuf, httpx, naabu, dnsx, alterx, katana, asnmap, gau, gowitness, amass
+- System tools: nmap, sslscan, testssl.sh, wafw00f
+- SecLists wordlists
+- Global `orionrecon` command
 
-### Requisitos
+### Requirements
 
-- Python 3.10+
-- Go 1.21+ *(para subfinder, nuclei, ffuf, amass)*
-- nmap
-- Kali Linux / Parrot OS / Ubuntu recomendado
+| Requirement | Version |
+|---|---|
+| Python | 3.10+ |
+| Go | 1.21+ |
+| OS | Kali Linux / Parrot OS / Ubuntu 22.04+ |
 
 ---
 
-## Uso rápido
+## Quick Start
 
 ```bash
-# Verificar herramientas instaladas
+# Check installed tools
 orionrecon check
 
-# Scan completo
-orionrecon scan objetivo.com
+# Full automated scan + PDF report
+orionrecon scan target.com --pdf
 
-# Módulos específicos
-orionrecon scan objetivo.com -m recon nmap nuclei tech takeover fuzzing
+# Specific modules only
+orionrecon scan target.com -m recon nmap nuclei tls cloud owasp
 
-# Solo recon OSINT
-orionrecon recon objetivo.com
+# OWASP-focused scan
+orionrecon scan target.com -m headers injection auth cors tls
 
-# Nmap con múltiples perfiles
+# Passive OSINT only
+orionrecon recon target.com
+
+# Nmap with multiple profiles
 orionrecon nmap 192.168.1.1 -p quick web vuln
 
-# Tech detection
-orionrecon tech https://objetivo.com
+# Directory + parameter fuzzing
+orionrecon fuzz https://target.com -m directories parameters
 
-# Fuzzing
-orionrecon fuzz https://objetivo.com -m directories parameters vhosts --domain objetivo.com
+# Tech fingerprinting
+orionrecon tech https://target.com
 
-# Regenerar reporte HTML de sesión existente
-orionrecon report ./sessions/objetivo.com_20240101_120000/
+# Regenerate report from existing session
+orionrecon report ./sessions/target.com_20240101_120000/
 ```
 
 ---
 
-## Perfiles Nmap
+## Available Modules
 
-| Perfil | Flags | Descripción |
-|--------|-------|-------------|
-| `quick` | `-T4 -F --open` | 100 puertos más comunes |
-| `stealth` | `-sS -T2 -p- --open -Pn` | SYN scan silencioso |
-| `full` | `-sS -sV -sC -O -T4 -p-` | Todos los puertos + versiones + scripts |
-| `vuln` | `-sV --script=vuln -T4` | Scripts NSE de vulnerabilidades |
-| `udp` | `-sU -T4 --top-ports 200` | UDP top 200 puertos |
-| `aggressive` | `-A -T4 -p-` | OS, versión, traceroute |
-| `web` | `-sV -p 80,443,8080,8443...` | Solo puertos web |
-| `smb` | `-p 139,445 --script=smb-vuln*` | Vulnerabilidades SMB |
+| Flag | Module | Description |
+|---|---|---|
+| `recon` | OSINT | Subdomain enum, emails, IPs, historical URLs, ASN |
+| `nmap` | Port Scan | Port discovery + service detection |
+| `nuclei` | Vuln Scan | CVE & misconfiguration templates |
+| `tech` | Fingerprinting | Technology stack detection |
+| `waf` | WAF/CDN | Firewall & CDN detection |
+| `cors` | CORS | Cross-Origin policy misconfigurations |
+| `tls` | TLS/SSL | Protocol weaknesses, cert analysis |
+| `takeover` | Subdomain Takeover | Dangling CNAME detection |
+| `fuzzing` | Fuzzing | Directory, parameter, vhost brute-force |
+| `crawl` | Crawl | JS-aware endpoint discovery |
+| `secrets` | Secrets | API keys & tokens in JS files |
+| `cloud` | Cloud | S3/GCS/Azure bucket enumeration |
+| `screenshots` | Screenshots | Visual capture (requires `--screenshots`) |
+| `headers` | **OWASP A05** | Security headers & cookie flags |
+| `injection` | **OWASP A03/A10** | SQLi, XSS, LFI, SSRF detection |
+| `auth` | **OWASP A07** | Default credentials, JWT security |
+
+---
+
+## Nmap Profiles
+
+| Profile | Description |
+|---|---|
+| `quick` | Top 100 ports, fast (-T4) |
+| `stealth` | SYN scan, slow, all ports |
+| `full` | All ports + versions + scripts + OS |
+| `vuln` | NSE vulnerability scripts |
+| `udp` | Top 200 UDP ports |
+| `web` | Web ports only (80, 443, 8080...) |
+| `smb` | SMB vulnerabilities |
+| `aggressive` | Full aggressive scan |
 
 ---
 
 ## Dashboard
 
-Cada scan genera un reporte HTML interactivo en `sessions/<target>_<timestamp>/report.html`:
+Each scan produces an interactive HTML report at `sessions/<target>_<timestamp>/report.html`:
 
-- **Overview** — stats por severidad, módulos ejecutados, top findings
-- **Findings** — tabla completa con filtros y búsqueda, filas expandibles con evidencia
-- **Recon** — subdominios, hosts vivos, emails
-- **Nmap** — puertos y servicios por perfil
-- **Tech Detection** — tecnologías detectadas, headers de seguridad faltantes
-- **Takeover** — subdominios vulnerables con cadena CNAME
-- **Fuzzing** — paths, parámetros y vhosts descubiertos
-- **Timeline** — línea de tiempo del scan con findings críticos
-- **Export JSON** — exportar todos los datos
+<details>
+<summary>📋 Dashboard sections</summary>
 
----
+- **Overview** — severity stats, severity bar, WAF summary, executed modules, top critical/high findings
+- **Findings** — full sortable table with severity filters, search, expandable evidence rows
+- **Recon** — subdomains, alive hosts (IPs + CNAMEs), emails, ASN/CIDR ranges, GAU interesting URLs
+- **Nmap Artillery** — ports and services per profile
+- **Tech Detection** — technology stack by category, missing security headers
+- **WAF/CDN** — detected firewalls with confidence and method
+- **CORS** — vulnerable endpoints with origin reflection details
+- **TLS/SSL** — weak protocols, cipher suites, vulnerabilities (Heartbleed, etc.), cert info
+- **Subdomain Takeover** — vulnerable subdomains with CNAME chains
+- **Fuzzing** — discovered paths filtered by status code
+- **Crawl** — endpoints, forms, interesting parameters
+- **Secrets** — exposed API keys and tokens
+- **Screenshots** — visual gallery
+- **Cloud** — discovered buckets and cloud services
+- **OWASP Top 10** — interactive grid mapping all findings to OWASP 2021 categories
+- **Timeline** — chronological scan events
+- **Export** — JSON data export, CSV (hosts + emails), PDF print
 
-## Estructura del proyecto
-
-```
-orionrecon/
-├── pentest.py              # CLI principal
-├── config.yaml             # Configuración
-├── install.sh              # Instalador automático
-├── requirements.txt
-└── modules/
-    ├── core/               # Motor paralelo, storage, logger
-    ├── recon/              # theHarvester, amass, subfinder, crt.sh
-    ├── scanning/           # Nmap, Nuclei
-    ├── tech/               # Fingerprinting de tecnologías
-    ├── takeover/           # Subdomain takeover detection
-    ├── fuzzing/            # ffuf wrapper
-    └── reporting/          # Dashboard HTML
-```
+</details>
 
 ---
 
-## Configuración
+## Configuration
 
-Edita `config.yaml` para personalizar:
+Copy `config.example.yaml` → `config.yaml` and customize:
 
 ```yaml
 api_keys:
-  shodan: "TU_API_KEY"
-  virustotal: "TU_API_KEY"
+  shodan: "YOUR_KEY"       # Enables Shodan in recon
+  virustotal: "YOUR_KEY"   # Enables VT in theHarvester
+
+general:
+  sessions_dir: "./sessions"
+  max_threads: 10
 
 nuclei:
   severity: ["critical", "high", "medium"]
+  rate_limit: 150
+```
 
-nmap:
-  profiles:
-    custom:
-      flags: "-sV -p 8080,8443 --open"
-      description: "Puertos personalizados"
+---
+
+## Scope Control
+
+```bash
+# Only scan specific subdomains
+orionrecon scan target.com --scope "^(api|app|admin)\."
+
+# Exclude certain hosts
+orionrecon scan target.com --exclude "staging|dev|test"
+```
+
+---
+
+## Output
+
+```
+sessions/
+└── target.com_20240101_120000/
+    ├── report.html       # Interactive dashboard
+    ├── report.pdf        # Branded PDF report
+    ├── results.json      # Complete raw data
+    ├── recon_hosts.csv   # Discovered hosts (exportable)
+    └── recon_emails.csv  # Discovered emails (exportable)
 ```
 
 ---
 
 ## Disclaimer
 
-Esta herramienta es únicamente para:
-- Pruebas en sistemas propios
-- Engagements de pentesting con autorización escrita
-- Entornos de laboratorio / CTFs
-- Investigación de seguridad defensiva
+This tool is intended **only** for:
+- Systems you own
+- Authorized penetration testing engagements (with written permission)
+- CTF competitions and lab environments
+- Defensive security research
 
-El autor no se hace responsable del uso indebido.
+**Unauthorized use is illegal and unethical. The author assumes no liability for misuse.**
 
 ---
 
-**OrionRecon** · By Jorge RC
+<p align="center">
+  <b>OrionRecon</b> · Built by <b>Jorge RC</b><br/>
+  <i>Attack Surface Recon Toolkit</i>
+</p>

@@ -2,7 +2,7 @@
 # ============================================================
 # Pentest Framework — Script de instalación
 # ============================================================
-set -e
+set +e  # no abortar si algo falla — continuar con lo que se pueda
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 GREEN='\033[0;32m'; YELLOW='\033[1;33m'; RED='\033[0;31m'; NC='\033[0m'
@@ -23,10 +23,10 @@ echo ""
 # ── Python deps ──────────────────────────────────────────
 info "Instalando dependencias Python..."
 if command -v pip3 &>/dev/null; then
-    pip3 install -r "${SCRIPT_DIR}/requirements.txt" --quiet
+    pip3 install --break-system-packages -r "${SCRIPT_DIR}/requirements.txt" --quiet
     ok "Python packages instalados"
 elif command -v pip &>/dev/null; then
-    pip install -r "${SCRIPT_DIR}/requirements.txt" --quiet
+    pip install --break-system-packages -r "${SCRIPT_DIR}/requirements.txt" --quiet
     ok "Python packages instalados"
 else
     fail "pip no encontrado. Instala Python 3: sudo apt install python3-pip"
@@ -47,7 +47,7 @@ if command -v theHarvester &>/dev/null || command -v theharvester &>/dev/null; t
     ok "theHarvester ya instalado"
 else
     info "Instalando theHarvester..."
-    pip3 install theHarvester --quiet && ok "theHarvester instalado" || warn "Fallo instalando theHarvester"
+    pip3 install --break-system-packages theHarvester --quiet && ok "theHarvester instalado" || warn "Fallo instalando theHarvester"
 fi
 
 # ── Go tools ─────────────────────────────────────────────
@@ -89,9 +89,122 @@ if command -v go &>/dev/null; then
     else
         ok "amass ya instalado"
     fi
+
+    # httpx
+    if ! command -v httpx &>/dev/null; then
+        info "Instalando httpx..."
+        go install github.com/projectdiscovery/httpx/cmd/httpx@latest 2>/dev/null \
+            && ok "httpx instalado" || warn "Fallo instalando httpx"
+    else
+        ok "httpx ya instalado"
+    fi
+
+    # naabu
+    if ! command -v naabu &>/dev/null; then
+        info "Instalando naabu..."
+        go install github.com/projectdiscovery/naabu/v2/cmd/naabu@latest 2>/dev/null \
+            && ok "naabu instalado" || warn "Fallo instalando naabu"
+    else
+        ok "naabu ya instalado"
+    fi
+
+    # dnsx
+    if ! command -v dnsx &>/dev/null; then
+        info "Instalando dnsx..."
+        go install github.com/projectdiscovery/dnsx/cmd/dnsx@latest 2>/dev/null \
+            && ok "dnsx instalado" || warn "Fallo instalando dnsx"
+    else
+        ok "dnsx ya instalado"
+    fi
+
+    # alterx
+    if ! command -v alterx &>/dev/null; then
+        info "Instalando alterx..."
+        go install github.com/projectdiscovery/alterx/cmd/alterx@latest 2>/dev/null \
+            && ok "alterx instalado" || warn "Fallo instalando alterx"
+    else
+        ok "alterx ya instalado"
+    fi
+
+    # katana
+    if ! command -v katana &>/dev/null; then
+        info "Instalando katana..."
+        go install github.com/projectdiscovery/katana/cmd/katana@latest 2>/dev/null \
+            && ok "katana instalado" || warn "Fallo instalando katana"
+    else
+        ok "katana ya instalado"
+    fi
+
+    # asnmap
+    if ! command -v asnmap &>/dev/null; then
+        info "Instalando asnmap..."
+        go install github.com/projectdiscovery/asnmap/cmd/asnmap@latest 2>/dev/null \
+            && ok "asnmap instalado" || warn "Fallo instalando asnmap"
+    else
+        ok "asnmap ya instalado"
+    fi
+
+    # gau
+    if ! command -v gau &>/dev/null; then
+        info "Instalando gau..."
+        go install github.com/lc/gau/v2/cmd/gau@latest 2>/dev/null \
+            && ok "gau instalado" || warn "Fallo instalando gau"
+    else
+        ok "gau ya instalado"
+    fi
+
+    # gowitness
+    if ! command -v gowitness &>/dev/null; then
+        info "Instalando gowitness..."
+        go install github.com/sensepost/gowitness@latest 2>/dev/null \
+            && ok "gowitness instalado" || warn "Fallo instalando gowitness"
+    else
+        ok "gowitness ya instalado"
+    fi
+
 else
-    warn "Go no encontrado. subfinder/nuclei/ffuf/amass requieren Go."
+    warn "Go no encontrado. subfinder/nuclei/ffuf/amass/httpx/naabu/dnsx/alterx/katana/asnmap/gau/gowitness requieren Go."
     warn "Instala Go: https://go.dev/dl/"
+fi
+
+# ── wafw00f ───────────────────────────────────────────────
+info "Verificando wafw00f..."
+if command -v wafw00f &>/dev/null; then
+    ok "wafw00f ya instalado"
+else
+    info "Instalando wafw00f..."
+    pip3 install --break-system-packages wafw00f --quiet && ok "wafw00f instalado" || warn "Fallo instalando wafw00f"
+fi
+
+# ── sslscan (primario TLS) ────────────────────────────────
+info "Verificando sslscan..."
+if command -v sslscan &>/dev/null; then
+    ok "sslscan ya instalado: $(sslscan --version 2>&1 | head -1)"
+elif command -v apt &>/dev/null; then
+    info "Instalando sslscan..."
+    sudo apt install sslscan -y --quiet 2>/dev/null \
+        && ok "sslscan instalado" || warn "Fallo instalando sslscan"
+else
+    warn "sslscan no disponible. Instala: sudo apt install sslscan"
+fi
+
+# ── testssl.sh (secundario TLS — análisis profundo) ───────
+info "Verificando testssl.sh..."
+if command -v testssl.sh &>/dev/null || command -v testssl &>/dev/null; then
+    ok "testssl.sh ya instalado"
+elif command -v apt &>/dev/null; then
+    info "Instalando testssl.sh vía apt..."
+    sudo apt install testssl.sh -y --quiet 2>/dev/null \
+        && ok "testssl.sh instalado" \
+        || {
+            warn "No se pudo instalar via apt, clonando desde GitHub..."
+            git clone --depth 1 https://github.com/drwetter/testssl.sh /opt/testssl.sh 2>/dev/null \
+                && sudo ln -sf /opt/testssl.sh/testssl.sh /usr/local/bin/testssl.sh \
+                && ok "testssl.sh instalado en /opt/testssl.sh" \
+                || warn "Fallo instalando testssl.sh"
+        }
+else
+    warn "testssl.sh no encontrado. Instala manualmente: git clone https://github.com/drwetter/testssl.sh /opt/testssl.sh"
 fi
 
 # ── SecLists ─────────────────────────────────────────────
