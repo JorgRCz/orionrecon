@@ -87,6 +87,6 @@ takeover:
   timeout: 10
 
 reporting:
-  theme: "hackerone"
+  theme: "dark"
   include_raw: true
   include_timeline: true
