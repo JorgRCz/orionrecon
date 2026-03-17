@@ -478,7 +478,7 @@ section.active { display: block; }
     <span style="color:var(--border)">|</span>
     <span>Generado: """ + _S + """</span>
     <span style="color:var(--border)">|</span>
-    <span style="color:var(--accent)">v1.0</span>
+    <span style="color:var(--accent)">v1.1</span>
   </div>
 </footer>
 
