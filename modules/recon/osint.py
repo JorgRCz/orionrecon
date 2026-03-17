@@ -33,14 +33,14 @@ def resolve_subdomain(subdomain: str, timeout: float = 3.0) -> dict | None:
         try:
             answers = resolver.resolve(subdomain, "A")
             ips = [r.address for r in answers]
-        except Exception:
-            pass
+        except Exception as e:
+            log.debug(f"DNS A lookup failed for {subdomain}: {e}")
 
         try:
             answers = resolver.resolve(subdomain, "CNAME")
             cnames = [r.target.to_text().rstrip(".") for r in answers]
-        except Exception:
-            pass
+        except Exception as e:
+            log.debug(f"DNS CNAME lookup failed for {subdomain}: {e}")
 
         if ips or cnames:
             return {
@@ -49,8 +49,8 @@ def resolve_subdomain(subdomain: str, timeout: float = 3.0) -> dict | None:
                 "cnames": cnames,
                 "alive":  bool(ips),
             }
-    except Exception:
-        pass
+    except Exception as e:
+        log.debug(f"DNS resolve error for {subdomain}: {e}")
     return None
 
 

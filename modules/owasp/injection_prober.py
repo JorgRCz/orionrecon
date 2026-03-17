@@ -263,8 +263,8 @@ class InjectionProber:
                         })
                         break  # un hit por parámetro es suficiente
                     time.sleep(self.DELAY)
-                except Exception:
-                    pass
+                except Exception as e:
+                    log.debug(f"SQLi probe error {url}: {e}")
 
             # XSS Reflected
             xss_payload = _XSS_PAYLOADS[0]
@@ -289,8 +289,8 @@ class InjectionProber:
                         "evidence": f"Marker '{_XSS_MARKER}' reflejado sin encoding en la respuesta",
                     })
                 time.sleep(self.DELAY)
-            except Exception:
-                pass
+            except Exception as e:
+                log.debug(f"XSS probe error {url}: {e}")
 
             # LFI / Path Traversal
             lfi_payload = _LFI_PAYLOADS[0]
@@ -314,8 +314,8 @@ class InjectionProber:
                         "evidence": "Contenido de /etc/passwd detectado en la respuesta",
                     })
                 time.sleep(self.DELAY)
-            except Exception:
-                pass
+            except Exception as e:
+                log.debug(f"LFI probe error {url}: {e}")
 
         return {"sqli": sqli_hits, "xss": xss_hits, "lfi": lfi_hits}
 

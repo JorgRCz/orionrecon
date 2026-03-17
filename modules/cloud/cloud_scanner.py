@@ -66,8 +66,8 @@ def _check_s3(bucket_name: str) -> dict | None:
                     "public": r.status_code == 200,
                     "severity": "high" if r.status_code == 200 else "medium",
                 }
-        except Exception:
-            pass
+        except Exception as e:
+            log.debug(f"S3 check failed for {bucket_name}: {e}")
     return None
 
 
@@ -85,8 +85,8 @@ def _check_gcs(bucket_name: str) -> dict | None:
                 "public": r.status_code == 200,
                 "severity": "high" if r.status_code == 200 else "medium",
             }
-    except Exception:
-        pass
+    except Exception as e:
+        log.debug(f"GCS check failed for {bucket_name}: {e}")
     return None
 
 
@@ -105,8 +105,8 @@ def _check_azure(name: str) -> dict | None:
                 "public": r.status_code == 200,
                 "severity": "high" if r.status_code == 200 else "medium",
             }
-    except Exception:
-        pass
+    except Exception as e:
+        log.debug(f"Azure check failed for {name}: {e}")
     return None
 
 
@@ -125,8 +125,8 @@ def _check_do_spaces(name: str) -> dict | None:
                     "public": r.status_code == 200,
                     "severity": "high" if r.status_code == 200 else "medium",
                 }
-        except Exception:
-            pass
+        except Exception as e:
+            log.debug(f"DO Spaces check failed for {name} ({region}): {e}")
     return None
 
 

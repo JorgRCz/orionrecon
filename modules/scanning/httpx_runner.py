@@ -131,8 +131,8 @@ class HttpxRunner:
                     t = soup.find("title")
                     if t:
                         title = t.get_text(strip=True)[:200]
-                except Exception:
-                    pass
+                except Exception as e:
+                    log.debug(f"BeautifulSoup title parse error: {e}")
                 return {
                     "url":      r.url,
                     "status":   r.status_code,

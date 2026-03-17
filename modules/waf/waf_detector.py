@@ -250,8 +250,8 @@ class WAFDetector:
                                         f"Trigger payload '{payload}' → {r2.status_code}: {b}"
                                     )
                                     break
-                except Exception:
-                    pass
+                except Exception as e:
+                    log.debug(f"WAF payload probe error for {url}: {e}")
 
         if detected_wafs:
             # Tomar el WAF con mayor score

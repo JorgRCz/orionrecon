@@ -152,8 +152,8 @@ class SecretsScanner:
                         headers={"User-Agent": "Mozilla/5.0 OrionRecon"},
                     )
                     secrets.extend(self._scan_content(js_r.text, js_url, host))
-                except Exception:
-                    pass
+                except Exception as e:
+                    log.debug(f"JS fetch error {js_url}: {e}")
 
         except Exception as e:
             log.debug(f"Error escaneando {url}: {e}")
@@ -225,8 +225,8 @@ class SecretsScanner:
                     with open(os.path.join(js_dir, fname), "w", encoding="utf-8", errors="replace") as f:
                         f.write(r.text)
                     downloaded += 1
-                except Exception:
-                    pass
+                except Exception as e:
+                    log.debug(f"JS download error {url}: {e}")
 
             if not downloaded:
                 return secrets
@@ -250,8 +250,8 @@ class SecretsScanner:
                             "host":        re.sub(r"https?://", "", urls[0]).split("/")[0] if urls else "",
                             "description": f"trufflehog detectó: {entry.get('DetectorName', '')}",
                         })
-                    except Exception:
-                        pass
+                    except Exception as e:
+                        log.debug(f"trufflehog output parse error: {e}")
 
             # gitleaks
             if self.has_gitleaks:
@@ -276,7 +276,7 @@ class SecretsScanner:
                                 "host":        re.sub(r"https?://", "", urls[0]).split("/")[0] if urls else "",
                                 "description": f"gitleaks detectó: {entry.get('RuleID', '')}",
                             })
-                    except Exception:
-                        pass
+                    except Exception as e:
+                        log.debug(f"gitleaks output parse error: {e}")
 
         return secrets

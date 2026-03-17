@@ -186,7 +186,8 @@ class AuthChecker:
                         panel_url, timeout=self.timeout, verify=False,
                         allow_redirects=True, headers=_UA,
                     )
-                except Exception:
+                except Exception as e:
+                    log.debug(f"Panel check error {panel_url}: {e}")
                     continue
 
                 # ¿El panel existe y muestra el marker esperado?
@@ -336,7 +337,8 @@ class AuthChecker:
                     url, timeout=self.timeout, verify=False,
                     allow_redirects=True, headers=_UA,
                 )
-            except Exception:
+            except Exception as e:
+                log.debug(f"JWT scan error {url}: {e}")
                 continue
 
             host = re.sub(r"https?://", "", url).split("/")[0]
@@ -410,8 +412,8 @@ class AuthChecker:
                                 "detail":   f"Algorithm: {alg}\nSecret: {secret}",
                                 "token":    token[:60] + "…",
                             }
-                except Exception:
-                    pass
+                except Exception as e:
+                    log.debug(f"JWT HMAC brute-force error: {e}")
 
             # Sin expiración (no exp claim)
             if "exp" not in payload:

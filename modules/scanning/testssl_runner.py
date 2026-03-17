@@ -10,7 +10,10 @@ import ssl
 import socket
 import tempfile
 import os
-import xml.etree.ElementTree as ET
+try:
+    import defusedxml.ElementTree as ET
+except ImportError:
+    import xml.etree.ElementTree as ET  # fallback
 from modules.core.engine import run_cmd, check_tool
 from modules.core.logger import console, get_logger
 from modules.core.storage import Storage
@@ -286,8 +289,8 @@ class TestsslRunner:
                                 "severity": "medium",
                                 "finding":  f"Servidor acepta {proto_name} (protocolo débil)",
                             })
-                except Exception:
-                    pass
+                except Exception as e:
+                    log.debug(f"SSL protocol probe error for {host}: {e}")
 
             # Obtener información del certificado
             ctx = ssl.create_default_context()
@@ -314,8 +317,8 @@ class TestsslRunner:
                     "severity": "medium",
                     "finding": f"Error SSL: {e}",
                 })
-            except Exception:
-                pass
+            except Exception as e:
+                log.debug(f"SSL cert fetch error for {host}:{port}: {e}")
 
         except Exception as e:
             log.debug(f"Python SSL fallback error para {host}:{port}: {e}")

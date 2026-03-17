@@ -176,7 +176,7 @@ class CorsScanner:
                     if severity == "critical":
                         break
 
-            except Exception:
-                pass
+            except Exception as e:
+                log.debug(f"CORS probe error for {url}: {e}")
 
         return vulns

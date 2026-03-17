@@ -1,7 +1,10 @@
 """
 Nmap Artillery — múltiples perfiles de escaneo con parseo XML de resultados.
 """
-import xml.etree.ElementTree as ET
+try:
+    import defusedxml.ElementTree as ET
+except ImportError:
+    import xml.etree.ElementTree as ET  # fallback
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from modules.core.engine import run_cmd, check_tool
 from modules.core.logger import console, get_logger, sev_badge

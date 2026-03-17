@@ -151,10 +151,11 @@ def get_cnames(domain: str, timeout: float = 5.0) -> list[str]:
                     current = target
             except (dns.resolver.NoAnswer, dns.resolver.NXDOMAIN):
                 break
-            except Exception:
+            except Exception as e:
+                log.debug(f"CNAME chain error for {domain}: {e}")
                 break
-    except Exception:
-        pass
+    except Exception as e:
+        log.debug(f"CNAME resolve error for {domain}: {e}")
     return cnames
 
 
@@ -178,7 +179,8 @@ def fetch_body(url: str, timeout: float = 10.0) -> str:
                 verify=False,
             )
             return resp.text[:5000]
-        except Exception:
+        except Exception as e:
+            log.debug(f"fetch_body error for {url}: {e}")
             continue
     return ""
 
