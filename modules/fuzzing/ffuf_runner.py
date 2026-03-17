@@ -46,8 +46,8 @@ def find_wordlist(wl_type: str, config_path: str = "") -> str | None:
     return None
 
 
-def parse_ffuf_output(json_path: str) -> list[dict]:
-    """Parsea el output JSON de ffuf."""
+def parse_ffuf_output(json_path: str, max_results: int = 500) -> list[dict]:
+    """Parsea el output JSON de ffuf. Limita a max_results entradas más interesantes."""
     results = []
     if not os.path.exists(json_path):
         return results
@@ -56,7 +56,19 @@ def parse_ffuf_output(json_path: str) -> list[dict]:
         with open(json_path) as f:
             data = json.load(f)
 
-        for result in data.get("results", []):
+        raw = data.get("results", [])
+
+        # Prioridad: 200/201 > 302/307 > 301 > resto
+        def _priority(r):
+            s = r.get("status", 0)
+            if s in (200, 201): return 0
+            if s in (302, 307): return 1
+            if s in (301,):     return 2
+            return 3
+
+        raw.sort(key=_priority)
+
+        for result in raw[:max_results]:
             results.append({
                 "url": result.get("url", ""),
                 "status": result.get("status", 0),
@@ -102,8 +114,9 @@ class FfufRunner:
             "-s",  # silent
         ]
 
-        # Filtrar códigos sin interés
-        cmd += ["-fc", "404,400"]
+        # Filtrar códigos sin interés (usar config si existe)
+        fc = self.cfg.get("filter_codes", "400,403,404")
+        cmd += ["-fc", fc]
 
         if extra_flags:
             cmd.extend(extra_flags)

@@ -323,6 +323,9 @@ section.active { display: block; }
     </tr></thead>
     <tbody id="findings-body"></tbody></table>
   </div>
+  <div style="text-align:center;padding:16px">
+    <button id="findings-more" onclick="loadMoreFindings()" class="btn" style="display:none">Cargar mas</button>
+  </div>
 </section>
 
 <!-- RECON -->
@@ -456,12 +459,22 @@ section.active { display: block; }
 const DATA = """ + _DAT + """;
 
 // ── NAV ───────────────────────────────────────────────────────
+const _initialized = {};
+const _sectionInits = {};  // populated after all init functions are defined
+
 function nav(name) {
+  // Section switching always happens first — no dependencies
   document.querySelectorAll('section').forEach(s => s.classList.remove('active'));
   document.querySelectorAll('.sidebar a').forEach(a => a.classList.remove('active'));
-  document.getElementById('s-' + name).classList.add('active');
+  const sec = document.getElementById('s-' + name);
+  if (sec) sec.classList.add('active');
   const n = document.getElementById('n-' + name);
   if (n) n.classList.add('active');
+  // Lazy init: run section initializer on first visit (after switching)
+  if (!_initialized[name] && _sectionInits[name]) {
+    _initialized[name] = true;
+    try { _sectionInits[name](); } catch(e) { console.error('init error for', name, e); }
+  }
   return false;
 }
 
@@ -549,12 +562,17 @@ function initOverview() {
 }
 
 // ── FINDINGS ──────────────────────────────────────────────────
-let curFilter = 'all', curSearch = '';
+let curFilter = 'all', curSearch = '', findingsPage = 0;
+const FINDINGS_PAGE_SIZE = 200;
 
 function renderFindings() {
+  findingsPage = 0;
+  renderFindingsPage();
+}
+
+function renderFindingsPage() {
   const findings = DATA.findings || [];
   const tbody = document.getElementById('findings-body');
-  tbody.innerHTML = '';
 
   const list = findings.filter(f => {
     const mf = curFilter === 'all' || f.severity === curFilter;
@@ -564,12 +582,20 @@ function renderFindings() {
     return mf && ms;
   });
 
+  if (findingsPage === 0) tbody.innerHTML = '';
+
   if (!list.length) {
     tbody.innerHTML = '<tr><td colspan="5" class="empty">Sin resultados</td></tr>';
+    document.getElementById('findings-more').style.display = 'none';
     return;
   }
 
-  list.forEach((f, i) => {
+  const start = findingsPage * FINDINGS_PAGE_SIZE;
+  const slice = list.slice(start, start + FINDINGS_PAGE_SIZE);
+  const offset = start;
+
+  slice.forEach((f, idx) => {
+    const i = offset + idx;
     const tr = document.createElement('tr');
     tr.className = 'frow';
     tr.onclick = () => toggleDetail('fd-' + i);
@@ -590,10 +616,10 @@ function renderFindings() {
     td2.id = 'fd-' + i;
     td2.innerHTML = `<td colspan="5"><div class="detail-content">
       <div class="dgrid">
-        <span class="dlbl">Descripción</span><span class="dval">${esc(f.description||'—')}</span>
+        <span class="dlbl">Descripcion</span><span class="dval">${esc(f.description||'—')}</span>
         ${f.url ? `<span class="dlbl">URL</span><span class="dval"><a href="${esc(f.url)}" target="_blank" style="color:var(--accent)">${esc(f.url)}</a></span>` : ''}
         ${f.cve ? `<span class="dlbl">CVE</span><span class="dval">${esc(f.cve)}</span>` : ''}
-        <span class="dlbl">Módulo</span><span class="dval">${esc(f.module)}</span>
+        <span class="dlbl">Modulo</span><span class="dval">${esc(f.module)}</span>
         <span class="dlbl">Timestamp</span><span class="dval">${esc(f.timestamp)}</span>
       </div>
       ${f.evidence ? `<div style="margin-top:10px"><div class="dlbl" style="margin-bottom:4px">Evidencia</div>
@@ -601,6 +627,20 @@ function renderFindings() {
     </div></td>`;
     tbody.appendChild(td2);
   });
+
+  const hasMore = start + FINDINGS_PAGE_SIZE < list.length;
+  const moreBtn = document.getElementById('findings-more');
+  if (hasMore) {
+    moreBtn.style.display = '';
+    moreBtn.textContent = `Cargar mas (${list.length - start - FINDINGS_PAGE_SIZE} restantes)`;
+  } else {
+    moreBtn.style.display = 'none';
+  }
+}
+
+function loadMoreFindings() {
+  findingsPage++;
+  renderFindingsPage();
 }
 
 function toggleDetail(id) {
@@ -1380,11 +1420,11 @@ function exportReconCSV() {
     return;
   }
 
-  let hostsCSV = 'host,ips,cnames,alive\n';
+  let hostsCSV = 'host,ips,cnames,alive\\n';
   resolved.forEach(h => {
     const ips    = (h.ips||[]).join('|');
     const cnames = (h.cnames||[]).join('|');
-    hostsCSV += `"${h.host}","${ips}","${cnames}",${h.alive}\n`;
+    hostsCSV += `"${h.host}","${ips}","${cnames}",${h.alive}\\n`;
   });
 
   const target = (DATA.meta||{}).target || 'report';
@@ -1398,7 +1438,7 @@ function exportReconCSV() {
 
   if (emails.length) {
     setTimeout(() => {
-      const emailsCSV = 'email\n' + emails.map(e => `"${e}"`).join('\n');
+      const emailsCSV = 'email\\n' + emails.map(e => `"${e}"`).join('\\n');
       const blobEmails = new Blob([emailsCSV], {type:'text/csv'});
       const a2 = document.createElement('a');
       a2.href = URL.createObjectURL(blobEmails);
@@ -1419,22 +1459,30 @@ function exportJSON() {
 
 // ── INIT ──────────────────────────────────────────────────────
 document.addEventListener('DOMContentLoaded', () => {
-  initOverview();
-  renderFindings();
-  initRecon();
-  initScanning();
-  initTech();
-  initWaf();
-  initCors();
-  initTLS();
-  initTakeover();
-  initFuzzing();
-  initCrawl();
-  initSecrets();
-  initScreenshots();
-  initCloud();
-  initOWASP();
-  initTimeline();
+  // Register lazy initializers for each section
+  Object.assign(_sectionInits, {
+    findings:    renderFindings,
+    recon:       initRecon,
+    scanning:    initScanning,
+    tech:        initTech,
+    waf:         initWaf,
+    cors:        initCors,
+    tls:         initTLS,
+    takeover:    initTakeover,
+    fuzzing:     initFuzzing,
+    crawl:       initCrawl,
+    secrets:     initSecrets,
+    screenshots: initScreenshots,
+    cloud:       initCloud,
+    owasp:       initOWASP,
+    timeline:    initTimeline,
+  });
+  // Mark findings as already initialized (rendered below)
+  _initialized['findings'] = true;
+  // Init overview (always visible on load)
+  try { initOverview(); } catch(e) { console.error('initOverview error', e); }
+  // Render first page of findings
+  try { renderFindings(); } catch(e) { console.error('renderFindings error', e); }
 });
 </script>
 </body>
@@ -1513,6 +1561,9 @@ class DashboardGenerator:
     def _build_pdf_html(self) -> str:  # noqa: C901
         """Genera HTML estático (sin JS) con todo el contenido pre-renderizado para WeasyPrint."""
         import html as _h
+        import re as _re
+
+        _ANSI_RE = _re.compile(r'\x1b\[[0-9;]*[mGKHF]|\x1b\[[?][0-9]*[hl]|\x1b[^[]|\x1b')
 
         data     = self.storage.data
         summary  = self.storage.summary()
@@ -1525,7 +1576,9 @@ class DashboardGenerator:
         finished_at = meta.get("finished_at", "N/A")
 
         def esc(s):
-            return _h.escape(str(s) if s is not None else "")
+            s = str(s) if s is not None else ""
+            s = _ANSI_RE.sub("", s)
+            return _h.escape(s)
 
         sev_colors = {
             "critical": "#dc2626", "high": "#ea580c",
@@ -1684,16 +1737,16 @@ class DashboardGenerator:
                 tls_html += f'<div style="margin-bottom:14px;padding:10px;border:1px solid #ddd;border-radius:4px">'
                 tls_html += f'<div style="font-family:monospace;font-weight:700;margin-bottom:6px">{esc(tgt)} <span style="font-size:10px;color:#999;font-weight:400">{esc(res.get("tool",""))}</span></div>'
                 if weak:
-                    tls_html += f'<div style="color:#b45309;margin-bottom:4px">⚠ Protocolos débiles: {", ".join(esc(p) for p in weak)}</div>'
+                    tls_html += f'<div style="color:#b45309;margin-bottom:4px">[!] Protocolos debiles: {", ".join(esc(p) for p in weak)}</div>'
                 if vulns:
                     for v in vulns:
-                        tls_html += f'<div style="color:#dc2626">🔴 {esc(v.get("name",""))}: {esc(v.get("finding",""))}</div>'
+                        tls_html += f'<div style="color:#dc2626">[VULN] {esc(v.get("name",""))}: {esc(v.get("finding",""))}</div>'
                 if cert:
                     for k in ("subject", "issuer", "not_after", "not_before"):
                         if cert.get(k):
                             tls_html += f'<div style="font-size:11px;color:#666">{esc(k)}: {esc(str(cert[k])[:100])}</div>'
                 if not weak and not vulns:
-                    tls_html += '<div style="color:#15803d">✓ Sin problemas TLS detectados</div>'
+                    tls_html += '<div style="color:#15803d">[OK] Sin problemas TLS detectados</div>'
                 tls_html += '</div>'
             tls_html += "</div>"
             sections.append(tls_html)
@@ -1784,7 +1837,7 @@ class DashboardGenerator:
                     f'<td style="font-family:monospace;font-size:11px">{esc(b.get("bucket",""))}</td>'
                     f'<td style="font-size:10px;font-family:monospace">{esc((b.get("url") or "")[:60])}</td>'
                     f'<td>{esc(str(b.get("status","")))}</td>'
-                    f'<td>{"✓ SÍ" if b.get("public") else "No"}</td></tr>'
+                    f'<td>{"SI" if b.get("public") else "No"}</td></tr>'
                     for b in buckets
                 )
                 cloud_html += f"""<h3>Buckets / Storage ({len(buckets)})</h3>
@@ -1875,16 +1928,16 @@ class DashboardGenerator:
             "cors": ["A01"], "authentication": ["A07"],
         }
         owasp_cats = [
-            ("A01","🔓","Broken Access Control"),
-            ("A02","🔐","Cryptographic Failures"),
-            ("A03","💉","Injection"),
-            ("A04","📐","Insecure Design"),
-            ("A05","⚙️","Security Misconfiguration"),
-            ("A06","📦","Vulnerable Components"),
-            ("A07","🔑","Auth Failures"),
-            ("A08","📋","Data Integrity Failures"),
-            ("A09","📊","Logging & Monitoring"),
-            ("A10","🌐","SSRF"),
+            ("A01","[A01]","Broken Access Control"),
+            ("A02","[A02]","Cryptographic Failures"),
+            ("A03","[A03]","Injection"),
+            ("A04","[A04]","Insecure Design"),
+            ("A05","[A05]","Security Misconfiguration"),
+            ("A06","[A06]","Vulnerable Components"),
+            ("A07","[A07]","Auth Failures"),
+            ("A08","[A08]","Data Integrity Failures"),
+            ("A09","[A09]","Logging & Monitoring"),
+            ("A10","[A10]","SSRF"),
         ]
         # Agrupar findings por OWASP
         by_owasp: dict[str, list] = {c[0]: [] for c in owasp_cats}
@@ -1926,7 +1979,7 @@ class DashboardGenerator:
                     for f in cat_findings
                 )
                 owasp_html += (
-                    f'<h3>{cicon} {cid} — {ctitle} ({len(cat_findings)} findings)</h3>'
+                    f'<h3>{cid} — {ctitle} ({len(cat_findings)} findings)</h3>'
                     f'<table class="dt" style="margin-bottom:10px">'
                     f'<thead><tr><th style="width:70px">Sev</th><th>Título</th>'
                     f'<th style="width:140px">Host</th><th style="width:90px">Módulo</th></tr></thead>'
@@ -1966,7 +2019,7 @@ code { font-family: monospace; font-size: 11px; background: #f3f4f6;
 <div style="background:#1e3a5f;color:#fff;padding:16px 20px;margin-bottom:20px;
             display:flex;justify-content:space-between;align-items:center">
   <div>
-    <div style="font-size:18px;font-weight:700">⭐ OrionRecon — Security Assessment</div>
+    <div style="font-size:18px;font-weight:700">OrionRecon — Security Assessment</div>
     <div style="font-size:11px;color:#93c5fd;margin-top:2px">Attack Surface Recon Toolkit · By Jorge RC</div>
   </div>
   <div style="text-align:right;font-size:11px;color:#93c5fd">
