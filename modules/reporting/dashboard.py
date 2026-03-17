@@ -160,6 +160,34 @@ tr.frow:hover td { background: var(--bg-hover); cursor: pointer; }
   white-space: pre-wrap; word-break: break-all; max-height: 180px; overflow-y: auto;
   color: var(--text-sec); margin-top: 8px;
 }
+.repro-block {
+  margin-top: 14px; border: 1px solid rgba(96,165,250,.25);
+  border-radius: 6px; overflow: hidden;
+}
+.repro-title {
+  background: rgba(96,165,250,.1); color: var(--accent);
+  font-size: 11px; font-weight: 700; text-transform: uppercase;
+  letter-spacing: .5px; padding: 6px 12px;
+}
+.repro-steps { padding: 8px 0; }
+.repro-comment {
+  font-family: monospace; font-size: 12px; color: #4b5563;
+  padding: 2px 12px; font-style: italic;
+}
+.repro-cmd {
+  display: flex; align-items: center; gap: 6px;
+  padding: 3px 12px; font-family: monospace; font-size: 12px;
+}
+.repro-cmd:hover { background: rgba(255,255,255,.04); }
+.repro-prompt { color: var(--accent); user-select: none; }
+.repro-code { color: #e2e8f0; flex: 1; word-break: break-all; white-space: pre-wrap; }
+.repro-copy {
+  background: none; border: 1px solid var(--border); color: var(--text-sec);
+  border-radius: 3px; padding: 1px 5px; font-size: 11px; cursor: pointer;
+  opacity: 0; transition: opacity .15s;
+}
+.repro-cmd:hover .repro-copy { opacity: 1; }
+.repro-copy:hover { background: var(--bg-hover); color: var(--accent); }
 .tag {
   display: inline-flex; padding: 1px 7px; background: var(--bg-secondary);
   border: 1px solid var(--border); border-radius: 10px;
@@ -614,6 +642,17 @@ function renderFindingsPage() {
     const td2 = document.createElement('tr');
     td2.className = 'detail-row';
     td2.id = 'fd-' + i;
+    const reproSteps = (f.repro || []);
+    const reproHtml = reproSteps.length
+      ? `<div class="repro-block">
+          <div class="repro-title">Pasos de Reproduccion / Validacion</div>
+          <div class="repro-steps">${reproSteps.map(s =>
+            s.startsWith('#')
+              ? `<div class="repro-comment">${esc(s)}</div>`
+              : `<div class="repro-cmd"><span class="repro-prompt">$</span><span class="repro-code">${esc(s)}</span><button class="repro-copy" onclick="copyRepro(this)" title="Copiar">&nbsp;⧉&nbsp;</button></div>`
+          ).join('')}</div>
+        </div>`
+      : '';
     td2.innerHTML = `<td colspan="5"><div class="detail-content">
       <div class="dgrid">
         <span class="dlbl">Descripcion</span><span class="dval">${esc(f.description||'—')}</span>
@@ -624,6 +663,7 @@ function renderFindingsPage() {
       </div>
       ${f.evidence ? `<div style="margin-top:10px"><div class="dlbl" style="margin-bottom:4px">Evidencia</div>
         <div class="evidence">${esc(f.evidence)}</div></div>` : ''}
+      ${reproHtml}
     </div></td>`;
     tbody.appendChild(td2);
   });
@@ -646,6 +686,23 @@ function loadMoreFindings() {
 function toggleDetail(id) {
   const r = document.getElementById(id);
   if (r) r.classList.toggle('open');
+}
+
+function copyRepro(btn) {
+  const code = btn.previousElementSibling.textContent;
+  navigator.clipboard.writeText(code).then(() => {
+    const orig = btn.innerHTML;
+    btn.innerHTML = '&nbsp;✓&nbsp;';
+    btn.style.color = 'var(--accent)';
+    setTimeout(() => { btn.innerHTML = orig; btn.style.color = ''; }, 1200);
+  }).catch(() => {
+    const ta = document.createElement('textarea');
+    ta.value = code;
+    document.body.appendChild(ta);
+    ta.select();
+    document.execCommand('copy');
+    document.body.removeChild(ta);
+  });
 }
 
 function setFilter(sev, btn) {
@@ -1620,20 +1677,41 @@ class DashboardGenerator:
         if findings:
             order_map = {s: i for i, s in enumerate(sev_order)}
             sorted_f = sorted(findings, key=lambda x: order_map.get((x.get("severity") or "info").lower(), 5))
-            rows = "".join(
-                f'<tr><td>{badge(f.get("severity","info"))}</td>'
-                f'<td>{esc(f.get("title",""))}</td>'
-                f'<td style="font-size:11px;font-family:monospace">{esc(f.get("host",""))}</td>'
-                f'<td style="font-size:11px">{esc(f.get("module",""))}</td></tr>'
-                for f in sorted_f
-            )
+
+            def _repro_pdf(f):
+                steps = f.get("repro") or []
+                if not steps:
+                    return ""
+                lines = []
+                for s in steps:
+                    if s.startswith("#"):
+                        lines.append(f'<div style="color:#6b7280;font-style:italic;font-size:10px">{esc(s)}</div>')
+                    else:
+                        lines.append(f'<div style="font-family:monospace;font-size:10px;color:#1e3a5f;background:#f0f4f8;padding:2px 5px;margin:1px 0;border-radius:2px">{esc(s)}</div>')
+                return (
+                    '<div style="margin-top:6px;padding:6px 8px;background:#f8faff;'
+                    'border-left:3px solid #3b82f6;border-radius:0 3px 3px 0">'
+                    '<div style="font-size:9px;font-weight:700;color:#3b82f6;text-transform:uppercase;'
+                    'letter-spacing:.3px;margin-bottom:3px">Reproduccion / Validacion</div>'
+                    + "".join(lines) + "</div>"
+                )
+
+            rows_html = ""
+            for f in sorted_f:
+                rows_html += (
+                    f'<tr><td style="vertical-align:top">{badge(f.get("severity","info"))}</td>'
+                    f'<td><div style="font-weight:600;font-size:12px">{esc(f.get("title",""))}</div>'
+                    f'{_repro_pdf(f)}</td>'
+                    f'<td style="font-size:11px;font-family:monospace;vertical-align:top">{esc(f.get("host",""))}</td>'
+                    f'<td style="font-size:11px;vertical-align:top">{esc(f.get("module",""))}</td></tr>'
+                )
             sections.append(f"""
 <div class="section page-break">
   <h2>Findings ({len(findings)})</h2>
   <table class="dt">
-    <thead><tr><th style="width:75px">Sev</th><th>Título</th>
-    <th style="width:160px">Host</th><th style="width:90px">Módulo</th></tr></thead>
-    <tbody>{rows}</tbody>
+    <thead><tr><th style="width:75px">Sev</th><th>Titulo / Reproduccion</th>
+    <th style="width:150px">Host</th><th style="width:90px">Modulo</th></tr></thead>
+    <tbody>{rows_html}</tbody>
   </table>
 </div>""")
 

@@ -8,6 +8,8 @@ from datetime import datetime
 from pathlib import Path
 from typing import Any
 
+from modules.core.repro import generate_repro_steps
+
 
 class Storage:
     def __init__(self, session_dir: str, target: str):
@@ -62,6 +64,7 @@ class Storage:
             "tags": tags or [],
             "timestamp": datetime.now().isoformat(),
         }
+        finding["repro"] = generate_repro_steps(finding)
         self.data["findings"].append(finding)
         self._save()
         return finding
